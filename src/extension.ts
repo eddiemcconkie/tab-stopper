@@ -1,26 +1,59 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand(
+    "tab-stopper.cursors-to-tab-stops",
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "multi-cursor-tab-stops" is now active!');
+      const doc = editor.document;
+      const selections = editor.selections;
+      if (selections.length < 2) {
+        vscode.window.showInformationMessage(
+          "Set multiple cursors/selections first."
+        );
+        return;
+      }
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('multi-cursor-tab-stops.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from multi-cursor-tab-stops!');
-	});
+      const fullText = doc.getText();
+      const sortedSelections = selections
+        .slice()
+        .sort((a, b) => doc.offsetAt(a.start) - doc.offsetAt(b.start));
 
-	context.subscriptions.push(disposable);
+      const firstOffset = doc.offsetAt(sortedSelections[0].start);
+      const lastOffset = doc.offsetAt(
+        sortedSelections[sortedSelections.length - 1].end
+      );
+
+      let snippetMid = "";
+      let lastCursorOffset = firstOffset;
+
+      sortedSelections.forEach((sel, i) => {
+        const start = doc.offsetAt(sel.start);
+        const end = doc.offsetAt(sel.end);
+        const selectedText = doc.getText(sel);
+        const escaped = selectedText.replace(/\$/g, "\\$").replace(/}/g, "\\}");
+
+        snippetMid += fullText.slice(lastCursorOffset, start);
+        snippetMid +=
+          selectedText.length > 0 ? `\${${i + 1}:${escaped}}` : `\${${i + 1}}`;
+        lastCursorOffset = end;
+      });
+
+      snippetMid += fullText.slice(lastCursorOffset, lastOffset);
+
+      await editor.insertSnippet(
+        new vscode.SnippetString(snippetMid),
+        new vscode.Range(
+          doc.positionAt(firstOffset),
+          doc.positionAt(lastOffset)
+        )
+      );
+    }
+  );
+
+  context.subscriptions.push(disposable);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}

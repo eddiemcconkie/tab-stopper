@@ -1,7 +1,11 @@
 {
-  "name": "multi-cursor-tab-stops",
-  "displayName": "multi-cursor-tab-stops",
-  "description": "",
+  "name": "tab-stopper",
+  "displayName": "Tab Stopper",
+  "publisher": "eddiemcconkie",
+  "author": {
+    "name": "Eddie McConkie"
+  },
+  "description": "Turn multiple cursors and selections into tab stops",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.102.0"
@@ -14,8 +18,15 @@
   "contributes": {
     "commands": [
       {
-        "command": "multi-cursor-tab-stops.helloWorld",
-        "title": "Hello World"
+        "command": "tab-stopper.cursors-to-tab-stops",
+        "title": "Tab Stopper: Cursors to Tab Stops"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "tab-stopper.cursors-to-tab-stops",
+        "key": "ctrl+alt+t",
+        "when": "editorTextFocus"
       }
     ]
   },
