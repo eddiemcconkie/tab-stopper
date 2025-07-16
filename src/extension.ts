@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
         sortedSelections[sortedSelections.length - 1].end
       );
 
-      let snippetMid = "";
+      let snippet = "";
       let lastCursorOffset = firstOffset;
 
       sortedSelections.forEach((sel, i) => {
@@ -35,20 +35,30 @@ export function activate(context: vscode.ExtensionContext) {
         const selectedText = doc.getText(sel);
         const escaped = selectedText.replace(/\$/g, "\\$").replace(/}/g, "\\}");
 
-        snippetMid += fullText.slice(lastCursorOffset, start);
-        snippetMid +=
+        const slice = fullText
+          .slice(lastCursorOffset, start)
+          .replace(/\$/g, "\\$")
+          .replace(/}/g, "\\}");
+        snippet += slice;
+        const stop =
           selectedText.length > 0 ? `\${${i + 1}:${escaped}}` : `\${${i + 1}}`;
+        snippet += stop;
         lastCursorOffset = end;
       });
 
-      snippetMid += fullText.slice(lastCursorOffset, lastOffset);
+      snippet += fullText.slice(lastCursorOffset, lastOffset);
 
       await editor.insertSnippet(
-        new vscode.SnippetString(snippetMid),
+        new vscode.SnippetString(snippet),
         new vscode.Range(
           doc.positionAt(firstOffset),
           doc.positionAt(lastOffset)
-        )
+        ),
+        {
+          undoStopBefore: true,
+          undoStopAfter: true,
+          keepWhitespace: true,
+        }
       );
     }
   );
